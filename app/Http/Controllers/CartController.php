@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\User;
 
 class CartController extends Controller
 {
@@ -11,7 +12,7 @@ class CartController extends Controller
             
             $cart = auth()->user()->cart;
             $cart->status = 'Pending';
-            $cart = saved(); //UPDATE 
+            $cart ->save(); //UPDATE 
             
             $notification = 'Tu registro se ha registrado correctamente. Te contactaremos via mail';
             return back()->with(compact('notification'));

@@ -2,113 +2,104 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\CartDetail;
 use App\Http\Controllers\Controller;
+
+use App\ProductImage;
 use Illuminate\Http\Request;
 use App\Product;
+use App\Category;
 
 class ProductController extends Controller
 {
-    
-    public function index(){
-        
-        $products = Product::paginate(10);
-        return view('admin.products.index')->with(compact('products')); //listado
-
+    public function index()
+    {
+      $products = Product::paginate(10);
+      return view('admin.products.index')->with(compact('products')); // listado
     }
 
-   public function create(){
-    	
-    	 return view('admin.products.create'); // formulario
-
+    public function create()
+    {
+        $categories = Category::orderBy('name')->get();
+      return view('admin.products.create')->with(compact('categories')); // formulario de registro
     }
 
-    public function store(Request $request){
-    	
-           //registrar el producto en la bd
-           //
-           $messages = [
-               'name.required' => 'Es necesario ingresar un nombre para el producto',
-               'name.min' => 'El nombre del producto debe tener al menos 3 caracteres',
-               'description.required' => 'La description corta es un campo obligatorio',
-               'description.max' => 'La description corta solo admite hasta 200 caracteres',
-               'price.required' => 'Es obligatorio definir un precio para el producto',
-               'price.numeric' => 'Ingrese un precio valido',
-               'price.min' => 'No se admiten valores negativos'
-           ];
+    public function store(Request $request)
+    {
+        // validar
+        $messages = [
+            'name.required' => 'Es necesario ingresar un nombre para el producto.',
+            'name.min' => 'El nombre del producto debe tener al menos 3 caracteres.',
+            'description.required' => 'La descripción corta es un campo obligatorio.',
+            'description.max' => 'La descripción corta solo admite hasta 200 caracteres.',
+            'price.required' => 'Es obligatorio definir un precio para el producto.',
+            'price.numeric' => 'Ingrese un precio válido.',
+            'price.min' => 'No se admiten valores negativos.'
+        ];
+        $rules = [
+            'name' => 'required|min:3',
+            'description' => 'required|max:200',
+            'price' => 'required|numeric|min:0'
+        ];
+        $this->validate($request, $rules, $messages);
 
-           //rule
-           $rules = [
-           	 'name' => 'required|min:3',
-           	 'description'  => 'required|max:200',
-           	 'price'  => 'required|numeric|min:0'
-           ];
-           $this->validate($request, $rules, $messages);
-           
-          // $request->all();
-          
-          $product = new Product;
-          $product->name = $request->input('name');
-           $product->description = $request->input('description');
-            $product->price = $request->input('price');
-             $product->long_description = $request->input('long_description');
-             $product->save();
+      // registrar el nuevo producto en la bd
+        $product = new Product();
+        $product->name = $request->input('name');
+        $product->description = $request->input('description');
+        $product->price = $request->input('price');
+        $product->long_description = $request->input('long_description');
+        $product->category_id = $request->category_id == 0 ? null : $request->category_id;
+        $product->save(); // INSERT
 
-             return redirect('/admin/products');
+        return redirect('/admin/products');
     }
 
-    public function edit($id){
-    	 
-    	 $product = Product::find($id);
-    	 return view('admin.products.edit')->with(compact('product')); // formulario
-
+    public function edit($id)
+    {
+        $categories = Category::orderBy('name')->get();
+        $product = Product::find($id);
+        return view('admin.products.edit')->with(compact('product', 'categories')); // form de edición
     }
 
-    public function update(Request $request, $id){
-    	
-            //registrar el producto en la bd
-           //
-           $messages = [
-               'name.required' => 'Es necesario ingresar un nombre para el producto',
-               'name.min' => 'El nombre del producto debe tener al menos 3 caracteres',
-               'description.required' => 'La description corta es un campo obligatorio',
-               'description.max' => 'La description corta solo admite hasta 200 caracteres',
-               'price.required' => 'Es obligatorio definir un precio para el producto',
-               'price.numeric' => 'Ingrese un precio valido',
-               'price.min' => 'No se admiten valores negativos'
-           ];
+    public function update(Request $request, $id)
+    {
+        $messages = [
+            'name.required' => 'Es necesario ingresar un nombre para el producto.',
+            'name.min' => 'El nombre del producto debe tener al menos 3 caracteres.',
+            'description.required' => 'La descripción corta es un campo obligatorio.',
+            'description.max' => 'La descripción corta solo admite hasta 200 caracteres.',
+            'price.required' => 'Es obligatorio definir un precio para el producto.',
+            'price.numeric' => 'Ingrese un precio válido.',
+            'price.min' => 'No se admiten valores negativos.'
+        ];
+        $rules = [
+            'name' => 'required|min:3',
+            'description' => 'required|max:200',
+            'price' => 'required|numeric|min:0'
+        ];
+        $this->validate($request, $rules, $messages);
+        // dd($request->all());
+        $product = Product::find($id);
+        $product->name = $request->input('name');
+        $product->description = $request->input('description');
+        $product->price = $request->input('price');
+        $product->long_description = $request->input('long_description');
+        $product->category_id = $request->category_id == 0 ? null : $request->category_id;
+        $product->save(); // UPDATE
 
-           //rule
-           $rules = [
-           	 'name' => 'required|min:3',
-           	 'description'  => 'required|max:200',
-           	 'price'  => 'required|numeric|min:0'
-           ];
-           $this->validate($request, $rules, $messages);
-           
-          // $request->all();
-          
-          $product =  Product::find($id);
-          $product->name = $request->input('name');
-           $product->description = $request->input('description');
-            $product->price = $request->input('price');
-             $product->long_description = $request->input('long_description');
-             $product->save();
-
-             return redirect('/admin/products');
+        return redirect('/admin/products');
     }
 
-    public function destroy($id){
-    	
-           //registrar el producto en la bd
-           
-          // $request->all();
-          
-          $product =  Product::find($id);
-          $product->delete();
+    public function destroy($id)
+    {
+        CartDetail::where('product_id', $id)->delete();
+        ProductImage::where('product_id', $id)->delete();
 
-             return redirect('/admin/products');
+        $product = Product::find($id);
+        $product->delete(); // DELETE
+
+        return back();
     }
-
-
 
 }
